@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck, shfmt and bats
+        run: |
+          case "$RUNNER_OS" in
+            Linux) sudo apt-get update && sudo apt-get install -y shellcheck shfmt bats ;;
+            macOS) brew install shellcheck shfmt bats-core ;;
+            Windows) choco install shellcheck shfmt -y && npm install -g bats ;;
+          esac
+      - name: Tool versions
+        run: |
+          shellcheck --version
+          shfmt --version
+          bats --version
+      - run: shellcheck bin/verhop lib/semver.sh lib/commands.sh tests/helper.bash
+      - run: shfmt -d .
+      - run: bats tests

@@ -1,0 +1,10 @@
+#!/bin/sh
+# verhop: check, compare, bump and sort semantic versions.
+LC_ALL=C
+export LC_ALL
+here=$(cd "$(dirname "$0")" && pwd -P) || exit 2
+# shellcheck source=../lib/semver.sh
+. "$here/../lib/semver.sh"
+# shellcheck source=../lib/commands.sh
+. "$here/../lib/commands.sh"
+verhop_main "$@"
