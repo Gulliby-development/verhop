@@ -5,7 +5,8 @@ verhop_usage() {
     'usage: verhop check VERSION...' \
     '       verhop cmp VERSION VERSION' \
     '       verhop bump major|minor|patch|pre VERSION' \
-    '       verhop sort [-r] [VERSION...]'
+    '       verhop sort [-r] [VERSION...]' \
+    '       verhop latest [VERSION...]'
 }
 
 verhop_cmd_check() {
@@ -148,6 +149,56 @@ verhop_cmd_sort() {
   return 0
 }
 
+verhop_cmd_latest() {
+  vl_best=
+  vl_count=0
+  vl_version=
+
+  if [ "$#" -gt 0 ]; then
+    while [ "$#" -gt 0 ]; do
+      vl_version=$1
+      if ! sv_reason "$vl_version"; then
+        printf 'verhop: invalid version "%s": %s\n' "$vl_version" "$SV_REASON" >&2
+        return 2
+      fi
+      if [ "$vl_count" -eq 0 ]; then
+        vl_best=$vl_version
+      else
+        sv_cmp "$vl_version" "$vl_best"
+        if [ "$SV_CMP" -gt 0 ]; then
+          vl_best=$vl_version
+        fi
+      fi
+      vl_count=$((vl_count + 1))
+      shift
+    done
+  else
+    while IFS= read -r vl_version || [ -n "$vl_version" ]; do
+      if ! sv_reason "$vl_version"; then
+        printf 'verhop: invalid version "%s": %s\n' "$vl_version" "$SV_REASON" >&2
+        return 2
+      fi
+      if [ "$vl_count" -eq 0 ]; then
+        vl_best=$vl_version
+      else
+        sv_cmp "$vl_version" "$vl_best"
+        if [ "$SV_CMP" -gt 0 ]; then
+          vl_best=$vl_version
+        fi
+      fi
+      vl_count=$((vl_count + 1))
+      vl_version=
+    done
+  fi
+
+  if [ "$vl_count" -eq 0 ]; then
+    printf '%s\n' 'verhop: latest found no versions' >&2
+    return 2
+  fi
+  printf '%s\n' "$vl_best"
+  return 0
+}
+
 verhop_main() {
   if [ "$#" -eq 0 ]; then
     verhop_usage >&2
@@ -182,6 +233,11 @@ verhop_main() {
     sort)
       shift
       verhop_cmd_sort "$@"
+      return $?
+      ;;
+    latest)
+      shift
+      verhop_cmd_latest "$@"
       return $?
       ;;
     *)

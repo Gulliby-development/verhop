@@ -35,6 +35,7 @@ usage: verhop check VERSION...
        verhop cmp VERSION VERSION
        verhop bump major|minor|patch|pre VERSION
        verhop sort [-r] [VERSION...]
+       verhop latest [VERSION...]
 ```
 
 ### Check
@@ -94,6 +95,24 @@ versions (including versions differing only in BUILD) retain their original
 relative order in both ascending and reverse modes. An empty input stream
 succeeds silently. A final line without LF is processed; blank lines are
 invalid, and CR bytes are retained and therefore make a version invalid.
+
+### Latest
+
+`latest [VERSION...]` prints the version with the highest precedence, as it
+was written. With no arguments it reads versions from standard input, one per
+line, under the same line rules as `sort`. Every input is validated first, in
+order, and the first invalid one is reported as
+`verhop: invalid version "ARG": REASON` with exit status 2 and no output. Among
+versions of equal precedence (for example versions that differ only in BUILD)
+the first one wins. No versions at all, which means no arguments and an empty
+input stream, is `verhop: latest found no versions` with exit status 2. Only
+`latest` itself is a command word: an argument such as `-r` is a version and
+is invalid.
+
+```console
+$ sh bin/verhop latest 1.9.0 1.10.0 1.10.0-rc.1
+1.10.0
+```
 
 ## Version grammar and precedence
 
@@ -161,8 +180,9 @@ Errors are one line on standard error with no standard output and exit status
   `verhop: bump needs a part and a version`; then an unsupported part:
   `verhop: unknown part "PART"`; then an invalid version:
   `verhop: invalid version "ARG": REASON`.
-- `cmp` and `sort` invalid versions:
+- `cmp`, `sort` and `latest` invalid versions:
   `verhop: invalid version "ARG": REASON`.
+- `latest` with no versions: `verhop: latest found no versions`.
 - Bump overflow: `verhop: bump would overflow "ARG"`.
 
 `check` is the exception to the error-stream rule: it prints one result per
